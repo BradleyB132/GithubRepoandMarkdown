@@ -19,13 +19,19 @@ The selected technology stack should:
 ## Decision
 The system will be built using the following technology stack:
 
-- **Backend Framework:** ASP.NET Core MVC (C#)
-- **Data Access:** Entity Framework Core (Code First)
-- **Database:** SQLite
-- **Frontend Rendering:** Razor Views (server-side rendering)
-- **Authentication:** ASP.NET Core Identity (basic role separation only)
-- **Hosting:** Cloud-hosted VM or App Service (e.g., Azure App Service)
+- **Python** as the primary programming language
+- **Poetry** for dependency and environment management
+- **Pytest** for automated testing
+- **Streamlit** for the web-based UI layer
+- **SQLAlchemy** as the ORM and data access layer
+- **PostgreSQL** as the production database
 
+The architecture follows:
+
+- **Layered** (UI → Service → Repository → DB)
+- Monolithic
+- Synchronous
+- Single relational database
 ---
 
 ## Alternatives Considered
