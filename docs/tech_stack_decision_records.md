@@ -1,4 +1,4 @@
-# Technology Stack Decision: .NET MVC with SQLite
+# Technology Stack Decision: streamlit with PostgreSQL
 
 ## Status
 Proposed
@@ -23,7 +23,6 @@ The system will be built using the following technology stack:
 - **Poetry** for dependency and environment management
 - **Pytest** for automated testing
 - **Streamlit** for the web-based UI layer
-- **SQLAlchemy** as the ORM and data access layer
 - **PostgreSQL** as the production database
 
 The architecture follows:
