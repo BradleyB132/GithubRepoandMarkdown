@@ -1,0 +1,20 @@
+[project]
+name = "githubrepoandmarkdown-main"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Bradley Brenning",email = "Brenbra132@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas",
+    "streamlit",
+    "sqlalchemy",
+    "psycopg2-binary",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
