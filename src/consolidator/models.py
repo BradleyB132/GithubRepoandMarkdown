@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional
+from typing import Any, List, Optional
 
 
 @dataclass
@@ -39,5 +39,5 @@ class ConsolidatedRecord:
     production_date: date
     line_number: int
     shift_leader: str
-    inspections: list
+    inspections: List[Any]
     shipping: Optional[ShippingManifest]
