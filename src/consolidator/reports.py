@@ -37,7 +37,9 @@ class Reporter:
 
                     defect_type = getattr(ins, "defect_type", None)
                     if defect_type:
-                        defects_by_type[defect_type] = defects_by_type.get(defect_type, 0) + 1
+                        defects_by_type[defect_type] = (
+                            defects_by_type.get(defect_type, 0) + 1
+                        )
 
                     line_no = getattr(r, "line_number", None)
                     if line_no is not None:
