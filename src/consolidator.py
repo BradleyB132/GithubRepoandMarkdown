@@ -14,6 +14,7 @@ Complexity:
 The functions are deterministic and avoid side-effects. They do not connect
 to a DB directly; persistence lives in `src.db`.
 """
+
 from typing import List, Dict, Tuple, Any
 import datetime
 
@@ -68,7 +69,7 @@ def consolidate(
     """
     # Build maps for quick lookup by normalized lot identifier. Each build is
     # O(N) for the number of rows in that source.
-    prod_map = {}
+    prod_map: Dict[str, Dict[str, Any]] = {}
     for r in production_rows:
         lot = _normalize_lot(r.get("Lot_ID") or r.get("lot_id") or r.get("lotNumber"))
         if not lot:
@@ -95,7 +96,7 @@ def consolidate(
             if existing.get("prod_date") is None and prod_date is not None:
                 prod_map[lot] = entry
 
-    qual_map = {}
+    qual_map: Dict[str, List[Dict[str, Any]]] = {}
     for r in quality_rows:
         lot = _normalize_lot(r.get("Lot_ID") or r.get("lot_id"))
         if not lot:
@@ -114,7 +115,9 @@ def consolidate(
     flags = []
 
     # Keys to iterate are all lots seen in any source to satisfy AC1
-    all_lots = set(list(prod_map.keys()) + list(qual_map.keys()) + list(ship_map.keys()))
+    all_lots = set(
+        list(prod_map.keys()) + list(qual_map.keys()) + list(ship_map.keys())
+    )
 
     for lot in sorted(all_lots):
         prod_entry = prod_map.get(lot)
@@ -126,20 +129,24 @@ def consolidate(
             # Create a flag for missing production record (AC3)
             flags.append({"lot": lot, "issue": "missing_production_record"})
             # Still include a lightweight consolidated record to allow traceability
-            consolidated.append({
-                "Lot_ID": lot,
-                "Line_No": None,
-                "Production_Date": None,
-                "Inspections": qual_entries,
-                "Shipping": ship_entry,
-            })
+            consolidated.append(
+                {
+                    "Lot_ID": lot,
+                    "Line_No": None,
+                    "Production_Date": None,
+                    "Inspections": qual_entries,
+                    "Shipping": ship_entry,
+                }
+            )
             continue
 
         # Build the merged record using production data as the authoritative anchor
         prod = prod_entry["prod"]
         record = {
             "Lot_ID": lot,
-            "Line_No": prod.get("Line_No") or prod.get("line_number") or prod.get("LineNo"),
+            "Line_No": prod.get("Line_No")
+            or prod.get("line_number")
+            or prod.get("LineNo"),
             "Production_Date": prod_entry.get("prod_date"),
             "Shift_Leader": prod.get("Shift_Leader") or prod.get("shift_leader"),
             "Inspections": qual_entries,
@@ -162,7 +169,10 @@ def consolidate(
                 flags.append({"lot": lot, "issue": "invalid_ship_date"})
             else:
                 # If shipping occurred before production, that's an inconsistency
-                if record["Production_Date"] is not None and ship_date < record["Production_Date"]:
+                if (
+                    record["Production_Date"] is not None
+                    and ship_date < record["Production_Date"]
+                ):
                     flags.append({"lot": lot, "issue": "ship_before_production"})
 
         # Exclude totally empty/incomplete records based on business rules (AC4)
@@ -196,7 +206,13 @@ def consolidate(
         record["Severities"] = list(sorted(severities))
 
         if len(defect_types) > 1:
-            flags.append({"lot": lot, "issue": "conflicting_defect_types", "details": record["Defect_Types"]})
+            flags.append(
+                {
+                    "lot": lot,
+                    "issue": "conflicting_defect_types",
+                    "details": record["Defect_Types"],
+                }
+            )
 
         consolidated.append(record)
 

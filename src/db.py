@@ -14,6 +14,7 @@ Complexity:
   individual INSERTs (could be bulk-optimized later).
 - Space: Uses minimal in-memory buffers; streaming inserts preferred for very large datasets.
 """
+
 from typing import List, Dict, Any, Optional, Tuple
 import os
 
@@ -43,9 +44,15 @@ def get_engine() -> Any:
     """
     # Prefer an explicit hard-coded override when provided (useful for
     # local development). If it's empty, fall back to environment variables.
-    url = RENDER_DATABASE_URL_HARDCODED or os.environ.get("RENDER_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    url = (
+        RENDER_DATABASE_URL_HARDCODED
+        or os.environ.get("RENDER_DATABASE_URL")
+        or os.environ.get("DATABASE_URL")
+    )
     if not url:
-        raise RuntimeError("Database URL not set in environment (RENDER_DATABASE_URL or DATABASE_URL)")
+        raise RuntimeError(
+            "Database URL not set in environment (RENDER_DATABASE_URL or DATABASE_URL)"
+        )
     # Import create_engine locally so importing this module does not fail
     # when SQLAlchemy is not installed. This defers the hard dependency until
     # the DB is actually used at runtime.
@@ -80,7 +87,9 @@ def init_db(engine: Any) -> None:
         conn.execute(text(sql))
 
 
-def persist_consolidated(consolidated: List[Dict[str, Any]], engine: Optional[Any] = None) -> None:
+def persist_consolidated(
+    consolidated: List[Dict[str, Any]], engine: Optional[Any] = None
+) -> None:
     """Persist consolidated records into a simple reporting table.
 
     This function is intentionally lightweight and demonstrates how to write
@@ -93,14 +102,17 @@ def persist_consolidated(consolidated: List[Dict[str, Any]], engine: Optional[An
 
     Complexity: O(N) inserts for N records. Consider bulk operations for large N.
     """
-    from sqlalchemy import Table, Column, Integer, String, MetaData, Date, Boolean, JSON
+    from sqlalchemy import Table, Column, Integer, String, MetaData, Date, JSON
+
+    # Import `text` locally for SQL string execution
+    from sqlalchemy import text
 
     if engine is None:
         engine = get_engine()
 
     meta = MetaData()
-    # Define a small report table; idempotent create
-    report_table = Table(
+    # Define a small report table; idempotent create (registers with MetaData)
+    Table(
         "report_consolidated",
         meta,
         Column("id", Integer, primary_key=True),
@@ -154,7 +166,9 @@ def persist_consolidated(consolidated: List[Dict[str, Any]], engine: Optional[An
                 )
 
 
-def fetch_source_rows(engine: Optional[Any] = None) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+def fetch_source_rows(
+    engine: Optional[Any] = None,
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
     """Fetch raw source rows from the database and return them in the same
     shape expected by `consolidate`.
 
@@ -184,7 +198,9 @@ def fetch_source_rows(engine: Optional[Any] = None) -> Tuple[List[Dict[str, Any]
     # connection is released back to the pool and closed properly.
     with engine.begin() as conn:
         # Read production logs and normalize column names
-        prod_q = text("SELECT lot_number as Lot_ID, line_number as Line_No, production_date as Production_Date, shift_leader as Shift_Leader FROM production_logs")
+        prod_q = text(
+            "SELECT lot_number as Lot_ID, line_number as Line_No, production_date as Production_Date, shift_leader as Shift_Leader FROM production_logs"
+        )
         res = conn.execute(prod_q)
         for row in res.mappings():
             # Convert date objects to ISO strings to be parsable by consolidator
@@ -198,13 +214,17 @@ def fetch_source_rows(engine: Optional[Any] = None) -> Tuple[List[Dict[str, Any]
             production_rows.append(prod)
 
         # Read quality inspections
-        qual_q = text("SELECT qi.quality_inspection_id as Inspection_ID, pl.lot_number as Lot_ID, qi.defect_type as Defect_Type, qi.defect_severity as Defect_Severity, qi.is_defective as is_defective, qi.inspection_count as inspection_count FROM quality_inspections qi JOIN production_logs pl ON qi.production_log_id = pl.production_log_id")
+        qual_q = text(
+            "SELECT qi.quality_inspection_id as Inspection_ID, pl.lot_number as Lot_ID, qi.defect_type as Defect_Type, qi.defect_severity as Defect_Severity, qi.is_defective as is_defective, qi.inspection_count as inspection_count FROM quality_inspections qi JOIN production_logs pl ON qi.production_log_id = pl.production_log_id"
+        )
         res = conn.execute(qual_q)
         for row in res.mappings():
             quality_rows.append(dict(row))
 
         # Read shipping manifests
-        ship_q = text("SELECT pl.lot_number as Lot_ID, sm.ship_date as Ship_Date, sm.destination as Destination, sm.is_shipped as is_shipped, sm.is_cancelled as is_cancelled FROM shipping_manifests sm JOIN production_logs pl ON sm.production_log_id = pl.production_log_id")
+        ship_q = text(
+            "SELECT pl.lot_number as Lot_ID, sm.ship_date as Ship_Date, sm.destination as Destination, sm.is_shipped as is_shipped, sm.is_cancelled as is_cancelled FROM shipping_manifests sm JOIN production_logs pl ON sm.production_log_id = pl.production_log_id"
+        )
         res = conn.execute(ship_q)
         for row in res.mappings():
             ship = dict(row)

@@ -9,9 +9,9 @@ Complexity:
   of inspections aggregated. Most operations are linear scans and grouping.
 - Space: O(K) where K is number of unique grouping keys (e.g., lines, defect types).
 """
-from typing import List, Dict, Any, Tuple
+
+from typing import List, Dict, Any
 from collections import defaultdict, Counter
-import datetime
 
 
 def summary_metrics(consolidated: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -26,7 +26,7 @@ def summary_metrics(consolidated: List[Dict[str, Any]]) -> Dict[str, Any]:
         Dictionary containing aggregated metrics, trending defect counts, and shipped summary.
     """
     # Group defects by line and defect type (AC5)
-    defects_by_line = defaultdict(Counter)
+    defects_by_line: Dict[Any, Counter[str]] = defaultdict(Counter)
     shipped_lots = []
     total_defects = 0
 
@@ -40,17 +40,30 @@ def summary_metrics(consolidated: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         # shipped info
         ship = rec.get("Shipping")
-        if ship and (ship.get("is_shipped") or ship.get("Is_Shipped") or ship.get("isShipped")):
-            shipped_lots.append({"Lot_ID": rec.get("Lot_ID"), "Ship_Date": ship.get("Ship_Date") or ship.get("ship_date")})
+        if ship and (
+            ship.get("is_shipped") or ship.get("Is_Shipped") or ship.get("isShipped")
+        ):
+            shipped_lots.append(
+                {
+                    "Lot_ID": rec.get("Lot_ID"),
+                    "Ship_Date": ship.get("Ship_Date") or ship.get("ship_date"),
+                }
+            )
 
     # Build top-lines report (AC6)
     top_lines = []
     for line, counter in defects_by_line.items():
         total_line_defects = sum(counter.values())
-        top_lines.append({"line": line, "total_defects": total_line_defects, "by_type": dict(counter)})
+        top_lines.append(
+            {
+                "line": line,
+                "total_defects": total_line_defects,
+                "by_type": dict(counter),
+            }
+        )
 
     # Trends: simple top N defect types overall
-    overall_defect_counter = Counter()
+    overall_defect_counter: Counter[str] = Counter()
     for line_counter in defects_by_line.values():
         overall_defect_counter.update(line_counter)
 
@@ -78,6 +91,16 @@ def high_severity_shipped(consolidated: List[Dict[str, Any]]) -> List[Dict[str, 
         severities = rec.get("Severities") or []
         if any(s.lower() in ("high", "critical") for s in severities):
             ship = rec.get("Shipping")
-            if ship and (ship.get("is_shipped") or ship.get("Is_Shipped") or ship.get("isShipped")):
-                results.append({"Lot_ID": rec.get("Lot_ID"), "Severities": severities, "Shipping": ship})
+            if ship and (
+                ship.get("is_shipped")
+                or ship.get("Is_Shipped")
+                or ship.get("isShipped")
+            ):
+                results.append(
+                    {
+                        "Lot_ID": rec.get("Lot_ID"),
+                        "Severities": severities,
+                        "Shipping": ship,
+                    }
+                )
     return results
