@@ -1,5 +1,6 @@
 """Entry point for the consolidator CLI (stub)."""
 
+
 def main():
     # orchestrate reading, aligning, filtering and reporting
     raise NotImplementedError
