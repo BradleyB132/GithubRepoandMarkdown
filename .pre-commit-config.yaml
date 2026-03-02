@@ -36,7 +36,7 @@ repos:
     #
     # Similar idea to version pinning in requirements.txt.
     #
-    rev: v0.13.0
+    rev: v0.15.4
 
     # "hooks" selects which hook definitions from that
     # repository we want to use.
@@ -45,6 +45,7 @@ repos:
     #
     hooks:
       - id: ruff
+        args: [--fix]
       - id: ruff-format
 
     # Important:
@@ -61,7 +62,7 @@ repos:
   # Another Remote Hook Provider
   # ==========================================================
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.1
+    rev: v1.19.1
     hooks:
       - id: mypy
 
@@ -126,10 +127,16 @@ repos:
         #
         always_run: true
 
-        # Environment variables available only while
-        # this hook executes.
-        #
-        # They do not permanently modify your system.
-        #
-        env:
-          PYTHONDONTWRITEBYTECODE: "1"
+      - id: license-check-gpl
+        name: block copyleft licenses (GPL/AGPL/LGPL) in runtime deps
+        language: system
+        entry: >
+          bash -c '
+            poetry run pip-licenses --format=json |
+            jq -r ".[] | select(.License | test(\"^(GPL|AGPL|LGPL)\"; \"i\"))" |
+            grep . &&
+            echo "ERROR: Copyleft license detected. Remove or replace dependency." &&
+            exit 1 || exit 0'
+        pass_filenames: false
+        always_run: true
+
