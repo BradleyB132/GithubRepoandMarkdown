@@ -45,6 +45,7 @@ repos:
     #
     hooks:
       - id: ruff
+        args: [--fix]
       - id: ruff-format
 
     # Important:
@@ -129,12 +130,13 @@ repos:
       - id: license-check-gpl
         name: block copyleft licenses (GPL/AGPL/LGPL) in runtime deps
         language: system
-        entry: >-
-          bash -c
-          'poetry run pip-licenses |
-          grep -E -i "(^|[^A-Z])(A?G?PL)([^A-Z]|$)" &&
-          echo "ERROR: Copyleft license detected. Remove or replace dependency." &&
-          exit 1 || exit 0'
+        entry: >
+          bash -c '
+            poetry run pip-licenses --format=json |
+            jq -r ".[] | select(.License | test(\"^(GPL|AGPL|LGPL)\"; \"i\"))" |
+            grep . &&
+            echo "ERROR: Copyleft license detected. Remove or replace dependency." &&
+            exit 1 || exit 0'
         pass_filenames: false
         always_run: true
 
