@@ -139,3 +139,4 @@ repos:
             exit 1 || exit 0'
         pass_filenames: false
         always_run: true
+
